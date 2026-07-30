@@ -15,14 +15,18 @@ namespace Course_Management.Controllers
 			_userService = userService;
 		}
 
-		// GET: api/Users
+		/// <summary>
+		/// Retrieves all users.
+		/// </summary>
 		[HttpGet]
 		public async Task<ActionResult<IEnumerable<User>>> GetUsers()
 		{
 			return Ok(await _userService.GetUsers());
 		}
 
-		// GET: api/Users/5
+		/// <summary>
+		/// Retrieves a user by ID.
+		/// </summary>
 		[HttpGet("{id}")]
 		public async Task<ActionResult<User>> GetUser(int id)
 		{
@@ -36,7 +40,19 @@ namespace Course_Management.Controllers
 			return Ok(user);
 		}
 
-		// POST: api/Users
+		/// <summary>
+		/// Search, Filter, Sort and Pagination.
+		/// </summary>
+		[HttpGet("search")]
+		public async Task<ActionResult<IEnumerable<User>>> SearchUsers([FromQuery] UserSearchRequest request)
+		{
+			var users = await _userService.SearchUsers(request);
+			return Ok(users);
+		}
+
+		/// <summary>
+		/// Creates a new user.
+		/// </summary>
 		[HttpPost]
 		public async Task<ActionResult<User>> PostUser(User user)
 		{
@@ -46,7 +62,9 @@ namespace Course_Management.Controllers
 				new { id = createdUser.userid }, createdUser);
 		}
 
-		// PUT: api/Users/5
+		/// <summary>
+		/// Updates an existing user.
+		/// </summary>
 		[HttpPut("{id}")]
 		public async Task<IActionResult> PutUser(int id, User user)
 		{
@@ -67,7 +85,9 @@ namespace Course_Management.Controllers
 			return NoContent();
 		}
 
-		// DELETE: api/Users/5
+		/// <summary>
+		/// Deletes a user.
+		/// </summary>
 		[HttpDelete("{id}")]
 		public async Task<IActionResult> DeleteUser(int id)
 		{

@@ -1,5 +1,4 @@
 ﻿using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Course_Management.Models
 {
@@ -8,11 +7,11 @@ namespace Course_Management.Models
 		[Key]
 		public int userid { get; set; }
 
-		public string firstname { get; set; }
+		public string? firstname { get; set; }
 
-		public string lastname { get; set; }
+		public string? lastname { get; set; }
 
-		public string email { get; set; }
+		public string? email { get; set; }
 
 		public string? phoneno { get; set; }
 
@@ -22,7 +21,7 @@ namespace Course_Management.Models
 
 		public string? role { get; set; }
 
-		public string password { get; set; }
+		public string? password { get; set; }
 
 		public DateTime? registered_date { get; set; }
 

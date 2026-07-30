@@ -15,16 +15,21 @@ namespace Course_Management.Controllers
 			_courseRepository = courseRepository;
 		}
 
-
-		// GET: api/Course
+		/// <summary>
+		/// Retrieves all courses.
+		/// </summary>
+		/// <returns>Returns a list of all courses.</returns>
 		[HttpGet]
 		public async Task<ActionResult<IEnumerable<Course>>> GetCourses()
 		{
 			return Ok(await _courseRepository.GetAllCourses());
 		}
 
-
-		// GET: api/Course/5
+		/// <summary>
+		/// Retrieves a course by its ID.
+		/// </summary>
+		/// <param name="id">The ID of the course.</param>
+		/// <returns>Returns the course if found; otherwise, returns NotFound.</returns>
 		[HttpGet("{id}")]
 		public async Task<ActionResult<Course>> GetCourse(int id)
 		{
@@ -38,22 +43,25 @@ namespace Course_Management.Controllers
 			return Ok(course);
 		}
 
-
-		// POST: api/Course
+		/// <summary>
+		/// Creates a new course.
+		/// </summary>
+		/// <param name="course">The course details.</param>
+		/// <returns>Returns the newly created course.</returns>
 		[HttpPost]
 		public async Task<ActionResult<Course>> PostCourse(Course course)
 		{
 			var createdCourse = await _courseRepository.AddCourse(course);
 
-			return CreatedAtAction(
-				nameof(GetCourse),
-				new { id = createdCourse.courseid },
-				createdCourse
-			);
+			return CreatedAtAction(nameof(GetCourse), new { id = createdCourse.courseid }, createdCourse);
 		}
 
-
-		// PUT: api/Course/5
+		/// <summary>
+		/// Updates an existing course.
+		/// </summary>
+		/// <param name="id">The ID of the course to update.</param>
+		/// <param name="course">The updated course details.</param>
+		/// <returns>Returns NoContent if the update is successful.</returns>
 		[HttpPut("{id}")]
 		public async Task<IActionResult> PutCourse(int id, Course course)
 		{
@@ -64,7 +72,6 @@ namespace Course_Management.Controllers
 				return NotFound();
 			}
 
-			// Assign URL id to object
 			course.courseid = id;
 
 			await _courseRepository.UpdateCourse(course);
@@ -72,8 +79,11 @@ namespace Course_Management.Controllers
 			return NoContent();
 		}
 
-
-		// DELETE: api/Course/5
+		/// <summary>
+		/// Deletes a course by its ID.
+		/// </summary>
+		/// <param name="id">The ID of the course to delete.</param>
+		/// <returns>Returns NoContent if the deletion is successful.</returns>
 		[HttpDelete("{id}")]
 		public async Task<IActionResult> DeleteCourse(int id)
 		{

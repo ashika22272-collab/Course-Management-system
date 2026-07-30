@@ -1,3 +1,4 @@
+using System.Reflection;
 using Course_Management.Interface;
 using Course_Management.Repository;
 using Course_Management.Services;
@@ -17,7 +18,16 @@ builder.Services.AddScoped<UserService>();
 
 // Swagger
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(options =>
+{
+	var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+	var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+
+	if (File.Exists(xmlPath))
+	{
+		options.IncludeXmlComments(xmlPath);
+	}
+});
 
 var app = builder.Build();
 
