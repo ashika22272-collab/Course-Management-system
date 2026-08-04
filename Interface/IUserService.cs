@@ -2,27 +2,20 @@
 
 namespace Course_Management.Interface
 {
-	public interface IUserRepository
+	public interface IUserService
 	{
-		// GET ALL USERS
 		Task<IEnumerable<User>> GetAllUsers();
 
-		// GET USER BY ID
 		Task<User?> GetUserById(int id);
 
-		// ADD USER
 		Task AddUser(User user);
 
-		// UPDATE USER
 		Task UpdateUser(User user);
 
-		// DELETE USER
 		Task DeleteUser(int id);
 
-		// LOGIN
-		Task<User?> Login(string email, string password);
-
-		// SEARCH USERS
 		Task<IEnumerable<User>> SearchUsers(UserSearchRequest request);
+
+		Task<User?> Login(string email, string password);
 	}
 }

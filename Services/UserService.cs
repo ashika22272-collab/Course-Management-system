@@ -3,50 +3,48 @@ using Course_Management.Models;
 
 namespace Course_Management.Services
 {
-	public class UserService
+	public class UserService : IUserService
 	{
-		private readonly IUserRepository _repository;
+		private readonly IUserRepository _userRepository;
 
-		public UserService(IUserRepository repository)
+		public UserService(IUserRepository userRepository)
 		{
-			_repository = repository;
+			_userRepository = userRepository;
 		}
 
-		// Get all users
-		public async Task<IEnumerable<User>> GetUsers()
+		public async Task<IEnumerable<User>> GetAllUsers()
 		{
-			return await _repository.GetAllUsers();
+			return await _userRepository.GetAllUsers();
 		}
 
-		// Get user by ID
-		public async Task<User?> GetUser(int id)
+		public async Task<User?> GetUserById(int id)
 		{
-			return await _repository.GetUserById(id);
+			return await _userRepository.GetUserById(id);
 		}
 
-		// Create user
-		public async Task<User> CreateUser(User user)
+		public async Task AddUser(User user)
 		{
-			await _repository.AddUser(user);
-			return user;
+			await _userRepository.AddUser(user);
 		}
 
-		// Update user
 		public async Task UpdateUser(User user)
 		{
-			await _repository.UpdateUser(user);
+			await _userRepository.UpdateUser(user);
 		}
 
-		// Delete user
 		public async Task DeleteUser(int id)
 		{
-			await _repository.DeleteUser(id);
+			await _userRepository.DeleteUser(id);
 		}
 
-		// Search, Filter, Sort and Pagination
+		public async Task<User?> Login(string email, string password)
+		{
+			return await _userRepository.Login(email, password);
+		}
+
 		public async Task<IEnumerable<User>> SearchUsers(UserSearchRequest request)
 		{
-			return await _repository.SearchUsers(request);
+			return await _userRepository.SearchUsers(request);
 		}
 	}
 }

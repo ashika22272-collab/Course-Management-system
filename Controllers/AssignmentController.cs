@@ -19,71 +19,136 @@ namespace Course_Management.Controllers
 		/// Retrieves all assignments.
 		/// </summary>
 		/// <returns>Returns a list of all assignments.</returns>
-		// GET: api/Assignment
 		[HttpGet]
 		public async Task<IActionResult> GetAllAssignments()
 		{
-			var assignments = await _assignmentRepository.GetAllAssignments();
-			return Ok(assignments);
+			try
+			{
+				var assignments = await _assignmentRepository.GetAllAssignments();
+				return Ok(assignments);
+			}
+			catch (Exception ex)
+			{
+				return StatusCode(500, new
+				{
+					Message = "An error occurred while retrieving assignments.",
+					Error = ex.Message
+				});
+			}
 		}
 
 		/// <summary>
 		/// Retrieves an assignment by its ID.
 		/// </summary>
 		/// <param name="id">The ID of the assignment.</param>
-		/// <returns>Returns the assignment if found; otherwise, returns NotFound.</returns>
-		// GET: api/Assignment/5
 		[HttpGet("{id}")]
 		public async Task<IActionResult> GetAssignmentById(int id)
 		{
-			var assignment = await _assignmentRepository.GetAssignmentById(id);
+			try
+			{
+				var assignment = await _assignmentRepository.GetAssignmentById(id);
 
-			if (assignment == null)
-				return NotFound();
+				if (assignment == null)
+				{
+					return NotFound("Assignment not found.");
+				}
 
-			return Ok(assignment);
+				return Ok(assignment);
+			}
+			catch (Exception ex)
+			{
+				return StatusCode(500, new
+				{
+					Message = "An error occurred while retrieving the assignment.",
+					Error = ex.Message
+				});
+			}
 		}
 
 		/// <summary>
 		/// Creates a new assignment.
 		/// </summary>
 		/// <param name="assignment">The assignment details.</param>
-		/// <returns>Returns a success message after creating the assignment.</returns>
-		// POST: api/Assignment
 		[HttpPost]
 		public async Task<IActionResult> AddAssignment(Assignment assignment)
 		{
-			await _assignmentRepository.AddAssignment(assignment);
+			try
+			{
+				if (!ModelState.IsValid)
+				{
+					return BadRequest(ModelState);
+				}
 
-			return Ok("Assignment added successfully");
+				await _assignmentRepository.AddAssignment(assignment);
+
+				return Ok("Assignment added successfully.");
+			}
+			catch (Exception ex)
+			{
+				return StatusCode(500, new
+				{
+					Message = "An error occurred while creating the assignment.",
+					Error = ex.Message
+				});
+			}
 		}
 
 		/// <summary>
 		/// Updates an existing assignment.
 		/// </summary>
 		/// <param name="assignment">The updated assignment details.</param>
-		/// <returns>Returns a success message after updating the assignment.</returns>
-		// PUT: api/Assignment
 		[HttpPut]
 		public async Task<IActionResult> UpdateAssignment(Assignment assignment)
 		{
-			await _assignmentRepository.UpdateAssignment(assignment);
+			try
+			{
+				if (!ModelState.IsValid)
+				{
+					return BadRequest(ModelState);
+				}
 
-			return Ok("Assignment updated successfully");
+				await _assignmentRepository.UpdateAssignment(assignment);
+
+				return Ok("Assignment updated successfully.");
+			}
+			catch (Exception ex)
+			{
+				return StatusCode(500, new
+				{
+					Message = "An error occurred while updating the assignment.",
+					Error = ex.Message
+				});
+			}
 		}
 
 		/// <summary>
 		/// Deletes an assignment by its ID.
 		/// </summary>
 		/// <param name="id">The ID of the assignment to delete.</param>
-		/// <returns>Returns a success message after deleting the assignment.</returns>
-		// DELETE: api/Assignment/5
 		[HttpDelete("{id}")]
 		public async Task<IActionResult> DeleteAssignment(int id)
 		{
-			await _assignmentRepository.DeleteAssignment(id);
+			try
+			{
+				var assignment = await _assignmentRepository.GetAssignmentById(id);
 
-			return Ok("Assignment deleted successfully");
+				if (assignment == null)
+				{
+					return NotFound("Assignment not found.");
+				}
+
+				await _assignmentRepository.DeleteAssignment(id);
+
+				return Ok("Assignment deleted successfully.");
+			}
+			catch (Exception ex)
+			{
+				return StatusCode(500, new
+				{
+					Message = "An error occurred while deleting the assignment.",
+					Error = ex.Message
+				});
+			}
 		}
 	}
 }

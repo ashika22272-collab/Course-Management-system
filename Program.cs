@@ -1,44 +1,109 @@
 using System.Reflection;
+using System.Text;
 using Course_Management.Interface;
 using Course_Management.Repository;
 using Course_Management.Services;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+// ===================================
+// Controllers
+// ===================================
 builder.Services.AddControllers();
 
+
+// ===================================
+// JWT Authentication
+// ===================================
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+	.AddJwtBearer(options =>
+	{
+		options.TokenValidationParameters = new TokenValidationParameters
+		{
+			ValidateIssuer = true,
+			ValidateAudience = true,
+			ValidateLifetime = true,
+			ValidateIssuerSigningKey = true,
+
+			ValidIssuer = builder.Configuration["Jwt:Issuer"],
+			ValidAudience = builder.Configuration["Jwt:Audience"],
+
+			IssuerSigningKey = new SymmetricSecurityKey(
+				Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!)
+			),
+
+			ClockSkew = TimeSpan.Zero
+		};
+	});
+
+
+builder.Services.AddAuthorization();
+
+
+// ===================================
 // Dependency Injection
+// ===================================
 builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IUserService, UserService>();
+
 builder.Services.AddScoped<ICourseRepository, CourseRepository>();
 builder.Services.AddScoped<IAssignmentRepository, AssignmentRepository>();
 
-// Services
-builder.Services.AddScoped<UserService>();
 
+// ===================================
 // Swagger
+// ===================================
 builder.Services.AddEndpointsApiExplorer();
+
 builder.Services.AddSwaggerGen(options =>
 {
-	var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
-	var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+	options.AddSecurityDefinition("Bearer",
+		new OpenApiSecurityScheme
+		{
+			Name = "Authorization",
+			Type = SecuritySchemeType.Http,
+			Scheme = "Bearer",
+			BearerFormat = "JWT",
+			In = ParameterLocation.Header,
+			Description = "Enter JWT token as: Bearer {your token}"
+		});
 
-	if (File.Exists(xmlPath))
-	{
-		options.IncludeXmlComments(xmlPath);
-	}
+
+	options.AddSecurityRequirement(document =>
+		new OpenApiSecurityRequirement
+		{
+			{
+				new OpenApiSecuritySchemeReference(
+					"Bearer",
+					document),
+				new List<string>()
+			}
+		});
 });
 
+
+// ===================================
+// Build
+// ===================================
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+
+// ===================================
+// Pipeline
+// ===================================
 if (app.Environment.IsDevelopment())
 {
 	app.UseSwagger();
 	app.UseSwaggerUI();
 }
 
+
 app.UseHttpsRedirection();
+
+app.UseAuthentication();
 
 app.UseAuthorization();
 
