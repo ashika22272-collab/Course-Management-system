@@ -10,15 +10,15 @@ using Microsoft.OpenApi;
 var builder = WebApplication.CreateBuilder(args);
 
 // ===================================
-// Controllers
+// Add Controllers
 // ===================================
 builder.Services.AddControllers();
-
 
 // ===================================
 // JWT Authentication
 // ===================================
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+builder.Services
+	.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 	.AddJwtBearer(options =>
 	{
 		options.TokenValidationParameters = new TokenValidationParameters
@@ -32,16 +32,16 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 			ValidAudience = builder.Configuration["Jwt:Audience"],
 
 			IssuerSigningKey = new SymmetricSecurityKey(
-				Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!)
+				Encoding.UTF8.GetBytes(
+					builder.Configuration["Jwt:Key"]!
+				)
 			),
 
 			ClockSkew = TimeSpan.Zero
 		};
 	});
 
-
 builder.Services.AddAuthorization();
-
 
 // ===================================
 // Dependency Injection
@@ -52,15 +52,31 @@ builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<ICourseRepository, CourseRepository>();
 builder.Services.AddScoped<IAssignmentRepository, AssignmentRepository>();
 
-
 // ===================================
-// Swagger
+// Swagger Configuration
 // ===================================
 builder.Services.AddEndpointsApiExplorer();
 
 builder.Services.AddSwaggerGen(options =>
 {
-	options.AddSecurityDefinition("Bearer",
+	// Controller Order
+	options.OrderActionsBy(api =>
+	{
+		var controller = api.ActionDescriptor.RouteValues["controller"];
+
+		return controller switch
+		{
+			"Auth" => "1",
+			"Users" => "2",
+			"Course" => "3",
+			"Assignment" => "4",
+			_ => "5"
+		};
+	});
+
+	// JWT Security Definition
+	options.AddSecurityDefinition(
+		"Bearer",
 		new OpenApiSecurityScheme
 		{
 			Name = "Authorization",
@@ -71,28 +87,36 @@ builder.Services.AddSwaggerGen(options =>
 			Description = "Enter JWT token as: Bearer {your token}"
 		});
 
-
+	// JWT Security Requirement
 	options.AddSecurityRequirement(document =>
 		new OpenApiSecurityRequirement
 		{
 			{
 				new OpenApiSecuritySchemeReference(
 					"Bearer",
-					document),
+					document
+				),
 				new List<string>()
 			}
 		});
+
+	// XML Documentation
+	var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+	var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+
+	if (File.Exists(xmlPath))
+	{
+		options.IncludeXmlComments(xmlPath);
+	}
 });
 
-
 // ===================================
-// Build
+// Build Application
 // ===================================
 var app = builder.Build();
 
-
 // ===================================
-// Pipeline
+// Middleware Pipeline
 // ===================================
 if (app.Environment.IsDevelopment())
 {
@@ -100,11 +124,10 @@ if (app.Environment.IsDevelopment())
 	app.UseSwaggerUI();
 }
 
-
 app.UseHttpsRedirection();
 
+// Authentication must come before Authorization
 app.UseAuthentication();
-
 app.UseAuthorization();
 
 app.MapControllers();

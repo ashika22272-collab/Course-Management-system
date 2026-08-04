@@ -6,13 +6,25 @@ using Course_Management.DTOs;
 
 namespace Course_Management.Controllers
 {
+	/// <summary>
+	/// Provides APIs for managing courses.
+	/// </summary>
+	/// <remarks>
+	/// All endpoints in this controller require JWT authentication.
+	/// </remarks>
 	[Route("api/[controller]")]
 	[ApiController]
 	[Authorize]
-	public class CourseController : ControllerBase 
+	public class CourseController : ControllerBase
 	{
 		private readonly ICourseRepository _courseRepository;
 
+		/// <summary>
+		/// Initializes a new instance of the CourseController class.
+		/// </summary>
+		/// <param name="courseRepository">
+		/// Repository used to perform course operations.
+		/// </param>
 		public CourseController(ICourseRepository courseRepository)
 		{
 			_courseRepository = courseRepository;
@@ -21,6 +33,9 @@ namespace Course_Management.Controllers
 		/// <summary>
 		/// Retrieves all courses.
 		/// </summary>
+		/// <returns>A list of all available courses.</returns>
+		/// <response code="200">Returns the list of courses.</response>
+		/// <response code="500">Internal server error.</response>
 		[HttpGet]
 		public async Task<ActionResult<IEnumerable<Course>>> GetCourses()
 		{
@@ -40,8 +55,13 @@ namespace Course_Management.Controllers
 		}
 
 		/// <summary>
-		/// Retrieves a course by ID.
+		/// Retrieves a course by its ID.
 		/// </summary>
+		/// <param name="id">Unique identifier of the course.</param>
+		/// <returns>The requested course.</returns>
+		/// <response code="200">Returns the requested course.</response>
+		/// <response code="404">Course not found.</response>
+		/// <response code="500">Internal server error.</response>
 		[HttpGet("{id}")]
 		public async Task<ActionResult<Course>> GetCourse(int id)
 		{
@@ -69,6 +89,11 @@ namespace Course_Management.Controllers
 		/// <summary>
 		/// Creates a new course.
 		/// </summary>
+		/// <param name="courseDto">Course information.</param>
+		/// <returns>The newly created course.</returns>
+		/// <response code="201">Course created successfully.</response>
+		/// <response code="400">Invalid request data.</response>
+		/// <response code="500">Internal server error.</response>
 		[HttpPost]
 		public async Task<ActionResult<Course>> PostCourse(CourseRequestDto courseDto)
 		{
@@ -117,6 +142,13 @@ namespace Course_Management.Controllers
 		/// <summary>
 		/// Updates an existing course.
 		/// </summary>
+		/// <param name="id">Unique identifier of the course.</param>
+		/// <param name="courseDto">Updated course information.</param>
+		/// <returns>No content.</returns>
+		/// <response code="204">Course updated successfully.</response>
+		/// <response code="400">Invalid request data.</response>
+		/// <response code="404">Course not found.</response>
+		/// <response code="500">Internal server error.</response>
 		[HttpPut("{id}")]
 		public async Task<IActionResult> PutCourse(int id, CourseRequestDto courseDto)
 		{
@@ -161,8 +193,13 @@ namespace Course_Management.Controllers
 		}
 
 		/// <summary>
-		/// Deletes a course.
+		/// Deletes a course by its ID.
 		/// </summary>
+		/// <param name="id">Unique identifier of the course.</param>
+		/// <returns>No content.</returns>
+		/// <response code="204">Course deleted successfully.</response>
+		/// <response code="404">Course not found.</response>
+		/// <response code="500">Internal server error.</response>
 		[HttpDelete("{id}")]
 		public async Task<IActionResult> DeleteCourse(int id)
 		{

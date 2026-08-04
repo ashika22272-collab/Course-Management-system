@@ -1,90 +1,39 @@
-﻿using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Text;
-using Course_Management.DTOs;
+﻿using Course_Management.DTOs;
 using Course_Management.Interface;
 using Course_Management.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.IdentityModel.Tokens;
 
 namespace Course_Management.Controllers
 {
+	/// <summary>
+	/// Provides APIs for managing users.
+	/// </summary>
+	/// <remarks>
+	/// All endpoints in this controller require JWT authentication.
+	/// </remarks>
 	[Authorize]
 	[Route("api/[controller]")]
 	[ApiController]
 	public class UsersController : ControllerBase
 	{
 		private readonly IUserService _userService;
-		private readonly IConfiguration _configuration;
 
-		public UsersController(IUserService userService, IConfiguration configuration)
+		/// <summary>
+		/// Initializes a new instance of the UsersController class.
+		/// </summary>
+		/// <param name="userService">Service used to perform user operations.</param>
+		public UsersController(IUserService userService)
 		{
 			_userService = userService;
-			_configuration = configuration;
 		}
 
-		// ==========================
-		// LOGIN
-		// ==========================
-		[AllowAnonymous]
-		[HttpPost("login")]
-		public async Task<IActionResult> Login(LoginRequestDto login)
-		{
-			try
-			{
-				var user = await _userService.Login(login.Email, login.Password);
-
-				if (user == null)
-				{
-					return Unauthorized(new
-					{
-						Message = "Invalid Email or Password"
-					});
-				}
-
-				var claims = new List<Claim>
-				{
-					new Claim(JwtRegisteredClaimNames.Sub, user.email ?? ""),
-					new Claim(JwtRegisteredClaimNames.Email, user.email ?? ""),
-					new Claim(ClaimTypes.Name, user.firstname ?? ""),
-					new Claim(ClaimTypes.Role, user.role ?? ""),
-					new Claim("UserId", user.userid.ToString())
-				};
-
-				var key = new SymmetricSecurityKey(
-					Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]!));
-
-				var credentials = new SigningCredentials(
-					key,
-					SecurityAlgorithms.HmacSha256);
-
-				var token = new JwtSecurityToken(
-					issuer: _configuration["Jwt:Issuer"],
-					audience: _configuration["Jwt:Audience"],
-					claims: claims,
-					expires: DateTime.Now.AddHours(2),
-					signingCredentials: credentials);
-
-				return Ok(new
-				{
-					Token = new JwtSecurityTokenHandler().WriteToken(token),
-					User = user
-				});
-			}
-			catch (Exception ex)
-			{
-				return StatusCode(500, new
-				{
-					Message = "Error while logging in.",
-					Error = ex.Message
-				});
-			}
-		}
-
-		// ==========================
-		// GET ALL USERS
-		// ==========================
+		/// <summary>
+		/// Retrieves all users.
+		/// </summary>
+		/// <returns>A list of all registered users.</returns>
+		/// <response code="200">Returns the list of users.</response>
+		/// <response code="500">Internal server error.</response>
 		[HttpGet]
 		public async Task<ActionResult<IEnumerable<User>>> GetUsers()
 		{
@@ -103,9 +52,14 @@ namespace Course_Management.Controllers
 			}
 		}
 
-		// ==========================
-		// GET USER BY ID
-		// ==========================
+		/// <summary>
+		/// Retrieves a user by ID.
+		/// </summary>
+		/// <param name="id">Unique identifier of the user.</param>
+		/// <returns>User details.</returns>
+		/// <response code="200">Returns the requested user.</response>
+		/// <response code="404">User not found.</response>
+		/// <response code="500">Internal server error.</response>
 		[HttpGet("{id}")]
 		public async Task<ActionResult<User>> GetUser(int id)
 		{
@@ -130,9 +84,13 @@ namespace Course_Management.Controllers
 			}
 		}
 
-		// ==========================
-		// SEARCH USERS
-		// ==========================
+		/// <summary>
+		/// Searches users based on the specified criteria.
+		/// </summary>
+		/// <param name="request">Search parameters.</param>
+		/// <returns>A list of matching users.</returns>
+		/// <response code="200">Returns matching users.</response>
+		/// <response code="500">Internal server error.</response>
 		[HttpGet("search")]
 		public async Task<ActionResult<IEnumerable<User>>> SearchUsers([FromQuery] UserSearchRequest request)
 		{
@@ -151,10 +109,14 @@ namespace Course_Management.Controllers
 			}
 		}
 
-		// ==========================
-		// CREATE USER
-		// ==========================
-		[AllowAnonymous]
+		/// <summary>
+		/// Creates a new user.
+		/// </summary>
+		/// <param name="userDto">User information.</param>
+		/// <returns>Success message.</returns>
+		/// <response code="200">User created successfully.</response>
+		/// <response code="400">Invalid request data.</response>
+		/// <response code="500">Internal server error.</response>
 		[HttpPost]
 		public async Task<IActionResult> PostUser(UserDto userDto)
 		{
@@ -199,9 +161,15 @@ namespace Course_Management.Controllers
 			}
 		}
 
-		// ==========================
-		// UPDATE USER
-		// ==========================
+		/// <summary>
+		/// Updates an existing user.
+		/// </summary>
+		/// <param name="id">Unique identifier of the user.</param>
+		/// <param name="userDto">Updated user information.</param>
+		/// <returns>No content.</returns>
+		/// <response code="204">User updated successfully.</response>
+		/// <response code="404">User not found.</response>
+		/// <response code="500">Internal server error.</response>
 		[HttpPut("{id}")]
 		public async Task<IActionResult> PutUser(int id, UserDto userDto)
 		{
@@ -236,9 +204,14 @@ namespace Course_Management.Controllers
 			}
 		}
 
-		// ==========================
-		// DELETE USER
-		// ==========================
+		/// <summary>
+		/// Deletes a user by ID.
+		/// </summary>
+		/// <param name="id">Unique identifier of the user.</param>
+		/// <returns>No content.</returns>
+		/// <response code="204">User deleted successfully.</response>
+		/// <response code="404">User not found.</response>
+		/// <response code="500">Internal server error.</response>
 		[HttpDelete("{id}")]
 		public async Task<IActionResult> DeleteUser(int id)
 		{

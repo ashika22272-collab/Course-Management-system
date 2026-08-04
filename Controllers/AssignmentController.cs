@@ -1,15 +1,29 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Course_Management.Interface;
 using Course_Management.Models;
 
 namespace Course_Management.Controllers
 {
+	/// <summary>
+	/// Provides APIs for managing assignments.
+	/// </summary>
+	/// <remarks>
+	/// All endpoints in this controller require JWT authentication.
+	/// </remarks>
+	[Authorize]
 	[Route("api/[controller]")]
 	[ApiController]
 	public class AssignmentController : ControllerBase
 	{
 		private readonly IAssignmentRepository _assignmentRepository;
 
+		/// <summary>
+		/// Initializes a new instance of the AssignmentController class.
+		/// </summary>
+		/// <param name="assignmentRepository">
+		/// Repository used to perform assignment operations.
+		/// </param>
 		public AssignmentController(IAssignmentRepository assignmentRepository)
 		{
 			_assignmentRepository = assignmentRepository;
@@ -18,7 +32,9 @@ namespace Course_Management.Controllers
 		/// <summary>
 		/// Retrieves all assignments.
 		/// </summary>
-		/// <returns>Returns a list of all assignments.</returns>
+		/// <returns>A list of all assignments.</returns>
+		/// <response code="200">Returns the list of assignments.</response>
+		/// <response code="500">Internal server error.</response>
 		[HttpGet]
 		public async Task<IActionResult> GetAllAssignments()
 		{
@@ -40,7 +56,11 @@ namespace Course_Management.Controllers
 		/// <summary>
 		/// Retrieves an assignment by its ID.
 		/// </summary>
-		/// <param name="id">The ID of the assignment.</param>
+		/// <param name="id">Unique identifier of the assignment.</param>
+		/// <returns>The requested assignment.</returns>
+		/// <response code="200">Returns the requested assignment.</response>
+		/// <response code="404">Assignment not found.</response>
+		/// <response code="500">Internal server error.</response>
 		[HttpGet("{id}")]
 		public async Task<IActionResult> GetAssignmentById(int id)
 		{
@@ -68,7 +88,11 @@ namespace Course_Management.Controllers
 		/// <summary>
 		/// Creates a new assignment.
 		/// </summary>
-		/// <param name="assignment">The assignment details.</param>
+		/// <param name="assignment">Assignment information.</param>
+		/// <returns>Success message.</returns>
+		/// <response code="200">Assignment created successfully.</response>
+		/// <response code="400">Invalid request data.</response>
+		/// <response code="500">Internal server error.</response>
 		[HttpPost]
 		public async Task<IActionResult> AddAssignment(Assignment assignment)
 		{
@@ -96,7 +120,11 @@ namespace Course_Management.Controllers
 		/// <summary>
 		/// Updates an existing assignment.
 		/// </summary>
-		/// <param name="assignment">The updated assignment details.</param>
+		/// <param name="assignment">Updated assignment information.</param>
+		/// <returns>Success message.</returns>
+		/// <response code="200">Assignment updated successfully.</response>
+		/// <response code="400">Invalid request data.</response>
+		/// <response code="500">Internal server error.</response>
 		[HttpPut]
 		public async Task<IActionResult> UpdateAssignment(Assignment assignment)
 		{
@@ -115,7 +143,7 @@ namespace Course_Management.Controllers
 			{
 				return StatusCode(500, new
 				{
-					Message = "An error occurred while updating the assignment.",
+					Message = "An error occurred while updating assignment.",
 					Error = ex.Message
 				});
 			}
@@ -124,7 +152,11 @@ namespace Course_Management.Controllers
 		/// <summary>
 		/// Deletes an assignment by its ID.
 		/// </summary>
-		/// <param name="id">The ID of the assignment to delete.</param>
+		/// <param name="id">Unique identifier of the assignment.</param>
+		/// <returns>Success message.</returns>
+		/// <response code="200">Assignment deleted successfully.</response>
+		/// <response code="404">Assignment not found.</response>
+		/// <response code="500">Internal server error.</response>
 		[HttpDelete("{id}")]
 		public async Task<IActionResult> DeleteAssignment(int id)
 		{
@@ -145,7 +177,7 @@ namespace Course_Management.Controllers
 			{
 				return StatusCode(500, new
 				{
-					Message = "An error occurred while deleting the assignment.",
+					Message = "An error occurred while deleting assignment.",
 					Error = ex.Message
 				});
 			}
