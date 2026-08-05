@@ -4,6 +4,7 @@ using Course_Management.Interface;
 using Course_Management.Repository;
 using Course_Management.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 
@@ -51,6 +52,7 @@ builder.Services.AddScoped<IUserService, UserService>();
 
 builder.Services.AddScoped<ICourseRepository, CourseRepository>();
 builder.Services.AddScoped<IAssignmentRepository, AssignmentRepository>();
+builder.Services.AddScoped<IAssignmentFileRepository, AssignmentFileRepository>();
 
 // ===================================
 // Swagger Configuration
@@ -126,10 +128,28 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-// Authentication must come before Authorization
+// ===================================
+// Enable Static Files
+// ===================================
+app.UseStaticFiles();
+
+app.UseStaticFiles(new StaticFileOptions
+{
+	FileProvider = new PhysicalFileProvider(
+		Path.Combine(builder.Environment.ContentRootPath, "Uploads")
+	),
+	RequestPath = "/Uploads"
+});
+
+// ===================================
+// Authentication & Authorization
+// ===================================
 app.UseAuthentication();
 app.UseAuthorization();
 
+// ===================================
+// Map Controllers
+// ===================================
 app.MapControllers();
 
 app.Run();

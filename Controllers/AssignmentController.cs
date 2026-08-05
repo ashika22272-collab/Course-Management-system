@@ -1,7 +1,9 @@
-﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
+﻿using Course_Management.DTOs;
 using Course_Management.Interface;
 using Course_Management.Models;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Course_Management.Controllers
 {
@@ -17,24 +19,25 @@ namespace Course_Management.Controllers
 	public class AssignmentController : ControllerBase
 	{
 		private readonly IAssignmentRepository _assignmentRepository;
+		private readonly IAssignmentFileRepository _assignmentFileRepository;
+		private readonly IWebHostEnvironment _environment;
 
 		/// <summary>
 		/// Initializes a new instance of the AssignmentController class.
 		/// </summary>
-		/// <param name="assignmentRepository">
-		/// Repository used to perform assignment operations.
-		/// </param>
-		public AssignmentController(IAssignmentRepository assignmentRepository)
+		public AssignmentController(
+			IAssignmentRepository assignmentRepository,
+			IAssignmentFileRepository assignmentFileRepository,
+			IWebHostEnvironment environment)
 		{
 			_assignmentRepository = assignmentRepository;
+			_assignmentFileRepository = assignmentFileRepository;
+			_environment = environment;
 		}
 
 		/// <summary>
 		/// Retrieves all assignments.
 		/// </summary>
-		/// <returns>A list of all assignments.</returns>
-		/// <response code="200">Returns the list of assignments.</response>
-		/// <response code="500">Internal server error.</response>
 		[HttpGet]
 		public async Task<IActionResult> GetAllAssignments()
 		{
@@ -56,11 +59,6 @@ namespace Course_Management.Controllers
 		/// <summary>
 		/// Retrieves an assignment by its ID.
 		/// </summary>
-		/// <param name="id">Unique identifier of the assignment.</param>
-		/// <returns>The requested assignment.</returns>
-		/// <response code="200">Returns the requested assignment.</response>
-		/// <response code="404">Assignment not found.</response>
-		/// <response code="500">Internal server error.</response>
 		[HttpGet("{id}")]
 		public async Task<IActionResult> GetAssignmentById(int id)
 		{
@@ -88,20 +86,13 @@ namespace Course_Management.Controllers
 		/// <summary>
 		/// Creates a new assignment.
 		/// </summary>
-		/// <param name="assignment">Assignment information.</param>
-		/// <returns>Success message.</returns>
-		/// <response code="200">Assignment created successfully.</response>
-		/// <response code="400">Invalid request data.</response>
-		/// <response code="500">Internal server error.</response>
 		[HttpPost]
 		public async Task<IActionResult> AddAssignment(Assignment assignment)
 		{
 			try
 			{
 				if (!ModelState.IsValid)
-				{
 					return BadRequest(ModelState);
-				}
 
 				await _assignmentRepository.AddAssignment(assignment);
 
@@ -118,22 +109,15 @@ namespace Course_Management.Controllers
 		}
 
 		/// <summary>
-		/// Updates an existing assignment.
+		/// Updates an assignment.
 		/// </summary>
-		/// <param name="assignment">Updated assignment information.</param>
-		/// <returns>Success message.</returns>
-		/// <response code="200">Assignment updated successfully.</response>
-		/// <response code="400">Invalid request data.</response>
-		/// <response code="500">Internal server error.</response>
 		[HttpPut]
 		public async Task<IActionResult> UpdateAssignment(Assignment assignment)
 		{
 			try
 			{
 				if (!ModelState.IsValid)
-				{
 					return BadRequest(ModelState);
-				}
 
 				await _assignmentRepository.UpdateAssignment(assignment);
 
@@ -150,13 +134,185 @@ namespace Course_Management.Controllers
 		}
 
 		/// <summary>
-		/// Deletes an assignment by its ID.
+		/// Uploads an assignment PDF.
 		/// </summary>
-		/// <param name="id">Unique identifier of the assignment.</param>
+		[HttpPost("upload")]
+		public async Task<IActionResult> UploadAssignment([FromForm] UploadAssignmentDto request)
+		{
+			try
+			{
+				if (request.File == null || request.File.Length == 0)
+				{
+					return BadRequest("Please select a PDF file.");
+				}
+
+				var extension = Path.GetExtension(request.File.FileName).ToLower();
+
+				if (extension != ".pdf")
+				{
+					return BadRequest("Only PDF files are allowed.");
+				}
+
+				if (request.File.Length > 10 * 1024 * 1024)
+				{
+					return BadRequest("Maximum file size is 10 MB.");
+				}
+
+				var fileName = $"{Guid.NewGuid()}{extension}";
+
+				var uploadFolder = Path.Combine(
+					_environment.ContentRootPath,
+					"Uploads",
+					"Assignments");
+
+				if (!Directory.Exists(uploadFolder))
+				{
+					Directory.CreateDirectory(uploadFolder);
+				}
+
+				var filePath = Path.Combine(uploadFolder, fileName);
+
+				using (var stream = new FileStream(filePath, FileMode.Create))
+				{
+					await request.File.CopyToAsync(stream);
+				}
+
+				var assignmentFile = new AssignmentFile
+				{
+					AssignmentName = request.AssignmentName,
+					FileName = fileName,
+					FilePath = filePath,
+					UploadedDate = DateTime.Now
+				};
+
+				await _assignmentFileRepository.UploadAssignment(assignmentFile);
+
+				return Ok(new
+				{
+					Message = "Assignment uploaded successfully.",
+					FileName = fileName
+				});
+			}
+			catch (Exception ex)
+			{
+				return StatusCode(500, new
+				{
+					Message = "An error occurred while uploading the assignment.",
+					Error = ex.Message
+				});
+			}
+		}
+		/// <summary>
+		/// Retrieves all uploaded assignment files.
+		/// </summary>
+		/// <returns>List of uploaded assignment files.</returns>
+		[HttpGet("files")]
+		public async Task<IActionResult> GetUploadedAssignments()
+		{
+			try
+			{
+				var files = await _assignmentFileRepository.GetAssignments();
+
+				return Ok(files);
+			}
+			catch (Exception ex)
+			{
+				return StatusCode(500, new
+				{
+					Message = "An error occurred while retrieving uploaded assignment files.",
+					Error = ex.Message
+				});
+			}
+		}
+		/// <summary>
+		/// Downloads an uploaded assignment PDF.
+		/// </summary>
+		/// <param name="id">Assignment file ID.</param>
+		/// <returns>PDF file.</returns>
+		[HttpGet("download/{id}")]
+		public async Task<IActionResult> DownloadAssignment(int id)
+		{
+			try
+			{
+				var assignment = await _assignmentFileRepository.GetAssignmentById(id);
+
+				if (assignment == null)
+				{
+					return NotFound(new
+					{
+						Message = "Assignment file not found."
+					});
+				}
+
+				if (!System.IO.File.Exists(assignment.FilePath))
+				{
+					return NotFound(new
+					{
+						Message = "File does not exist on the server."
+					});
+				}
+
+				var fileBytes = await System.IO.File.ReadAllBytesAsync(assignment.FilePath);
+
+				return File(
+					fileBytes,
+					"application/pdf",
+					assignment.FileName);
+			}
+			catch (Exception ex)
+			{
+				return StatusCode(500, new
+				{
+					Message = "An error occurred while downloading the assignment.",
+					Error = ex.Message
+				});
+			}
+		}
+		/// <summary>
+		/// Deletes an uploaded assignment PDF.
+		/// </summary>
+		/// <param name="id">Assignment file ID.</param>
 		/// <returns>Success message.</returns>
-		/// <response code="200">Assignment deleted successfully.</response>
-		/// <response code="404">Assignment not found.</response>
-		/// <response code="500">Internal server error.</response>
+		[HttpDelete("file/{id}")]
+		public async Task<IActionResult> DeleteUploadedAssignment(int id)
+		{
+			try
+			{
+				var assignment = await _assignmentFileRepository.GetAssignmentById(id);
+
+				if (assignment == null)
+				{
+					return NotFound(new
+					{
+						Message = "Assignment file not found."
+					});
+				}
+
+				if (System.IO.File.Exists(assignment.FilePath))
+				{
+					System.IO.File.Delete(assignment.FilePath);
+				}
+
+				await _assignmentFileRepository.DeleteAssignment(id);
+
+				return Ok(new
+				{
+					Message = "Assignment deleted successfully."
+				});
+			}
+			catch (Exception ex)
+			{
+				return StatusCode(500, new
+				{
+					Message = "An error occurred while deleting the assignment.",
+					Error = ex.Message
+				});
+			}
+		}
+
+		/// <summary>
+		/// Deletes an assignment.
+		/// </summary>
 		[HttpDelete("{id}")]
 		public async Task<IActionResult> DeleteAssignment(int id)
 		{
