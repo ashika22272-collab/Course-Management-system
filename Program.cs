@@ -16,6 +16,19 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 
 // ===================================
+// CORS Configuration
+// ===================================
+builder.Services.AddCors(options =>
+{
+	options.AddPolicy("AllowAngular", policy =>
+	{
+		policy.WithOrigins("http://localhost:4200")
+			  .AllowAnyHeader()
+			  .AllowAnyMethod();
+	});
+});
+
+// ===================================
 // JWT Authentication
 // ===================================
 builder.Services
@@ -127,6 +140,11 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+// ===================================
+// Enable CORS
+// ===================================
+app.UseCors("AllowAngular");
 
 // ===================================
 // Enable Static Files
