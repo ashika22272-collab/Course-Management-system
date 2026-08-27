@@ -40,6 +40,21 @@ namespace Course_Management.Repository
 				},
 				commandType: CommandType.StoredProcedure);
 		}
+		// GET USER BY EMAIL
+		public async Task<User?> GetUserByEmail(string email)
+		{
+			using var connection = new SqlConnection(
+				_configuration.GetConnectionString("CollegeDB"));
+
+			return await connection.QueryFirstOrDefaultAsync<User>(
+				@"SELECT TOP 1 *
+		  FROM Users
+		  WHERE email = @Email",
+				new
+				{
+					Email = email
+				});
+		}
 
 		// ADD USER
 		public async Task AddUser(User user)

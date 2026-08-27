@@ -10,6 +10,9 @@ namespace Course_Management.Interface
 		// GET USER BY ID
 		Task<User?> GetUserById(int id);
 
+		// GET USER BY EMAIL
+		Task<User?> GetUserByEmail(string email);
+
 		// ADD USER
 		Task AddUser(User user);
 

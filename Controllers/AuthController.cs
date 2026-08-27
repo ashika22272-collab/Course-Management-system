@@ -58,6 +58,18 @@ namespace Course_Management.Controllers
 				});
 			}
 
+			// Check whether the email exists
+			var existingUser = await _userService.GetUserByEmail(request.Email);
+
+			if (existingUser == null)
+			{
+				return NotFound(new
+				{
+					Message = "Email does not exist. Please register."
+				});
+			}
+
+			// Email exists, now validate the password
 			var user = await _userService.Login(
 				request.Email,
 				request.Password);
@@ -66,7 +78,7 @@ namespace Course_Management.Controllers
 			{
 				return Unauthorized(new
 				{
-					Message = "Invalid email or password."
+					Message = "Invalid password."
 				});
 			}
 

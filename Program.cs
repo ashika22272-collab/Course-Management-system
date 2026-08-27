@@ -3,6 +3,7 @@ using System.Text;
 using Course_Management.Interface;
 using Course_Management.Repository;
 using Course_Management.Services;
+using CourseManagementAPI.Repositories;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.IdentityModel.Tokens;
@@ -66,6 +67,8 @@ builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<ICourseRepository, CourseRepository>();
 builder.Services.AddScoped<IAssignmentRepository, AssignmentRepository>();
 builder.Services.AddScoped<IAssignmentFileRepository, AssignmentFileRepository>();
+builder.Services.AddScoped<IEnrollmentRepository, EnrollmentRepository>();
+builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
 
 // ===================================
 // Swagger Configuration

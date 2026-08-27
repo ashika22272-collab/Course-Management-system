@@ -15,6 +15,8 @@ namespace Course_Management.Models
 
 		public int? userid { get; set; }
 
+		public string? instructor { get; set; }
+
 		public DateTime? start_date { get; set; }
 
 		public DateTime? end_date { get; set; }
@@ -32,5 +34,11 @@ namespace Course_Management.Models
 		public DateTime? created_at { get; set; }
 
 		public bool? is_active { get; set; }
+
+		public string? Category { get; set; }
+
+		public int? Duration { get; set; }
+
+		public int Enrolled { get; set; }
 	}
 }

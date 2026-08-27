@@ -9,9 +9,6 @@ namespace Course_Management.Controllers
 	/// <summary>
 	/// Provides APIs for managing courses.
 	/// </summary>
-	/// <remarks>
-	/// All endpoints in this controller require JWT authentication.
-	/// </remarks>
 	[Route("api/[controller]")]
 	[ApiController]
 	[Authorize]
@@ -19,29 +16,22 @@ namespace Course_Management.Controllers
 	{
 		private readonly ICourseRepository _courseRepository;
 
-		/// <summary>
-		/// Initializes a new instance of the CourseController class.
-		/// </summary>
-		/// <param name="courseRepository">
-		/// Repository used to perform course operations.
-		/// </param>
 		public CourseController(ICourseRepository courseRepository)
 		{
 			_courseRepository = courseRepository;
 		}
 
-		/// <summary>
-		/// Retrieves all courses.
-		/// </summary>
-		/// <returns>A list of all available courses.</returns>
-		/// <response code="200">Returns the list of courses.</response>
-		/// <response code="500">Internal server error.</response>
+		// =====================================================
+		// GET ALL COURSES
+		// =====================================================
+
 		[HttpGet]
 		public async Task<ActionResult<IEnumerable<Course>>> GetCourses()
 		{
 			try
 			{
 				var courses = await _courseRepository.GetAllCourses();
+
 				return Ok(courses);
 			}
 			catch (Exception ex)
@@ -54,14 +44,11 @@ namespace Course_Management.Controllers
 			}
 		}
 
-		/// <summary>
-		/// Retrieves a course by its ID.
-		/// </summary>
-		/// <param name="id">Unique identifier of the course.</param>
-		/// <returns>The requested course.</returns>
-		/// <response code="200">Returns the requested course.</response>
-		/// <response code="404">Course not found.</response>
-		/// <response code="500">Internal server error.</response>
+
+		// =====================================================
+		// GET COURSE BY ID
+		// =====================================================
+
 		[HttpGet("{id}")]
 		public async Task<ActionResult<Course>> GetCourse(int id)
 		{
@@ -71,7 +58,10 @@ namespace Course_Management.Controllers
 
 				if (course == null)
 				{
-					return NotFound("Course not found.");
+					return NotFound(new
+					{
+						Message = "Course not found."
+					});
 				}
 
 				return Ok(course);
@@ -86,46 +76,106 @@ namespace Course_Management.Controllers
 			}
 		}
 
-		/// <summary>
-		/// Creates a new course.
-		/// </summary>
-		/// <param name="courseDto">Course information.</param>
-		/// <returns>The newly created course.</returns>
-		/// <response code="201">Course created successfully.</response>
-		/// <response code="400">Invalid request data.</response>
-		/// <response code="500">Internal server error.</response>
+
+		// =====================================================
+		// CREATE COURSE
+		// =====================================================
+
 		[HttpPost]
-		public async Task<ActionResult<Course>> PostCourse(CourseRequestDto courseDto)
+		public async Task<ActionResult<Course>> PostCourse(
+			[FromBody] CourseRequestDto courseDto)
 		{
 			try
 			{
+				// ---------------------------------------------
+				// VALIDATION
+				// ---------------------------------------------
+
 				if (!ModelState.IsValid)
 				{
 					return BadRequest(ModelState);
 				}
 
+
+				// ---------------------------------------------
+				// DATE VALIDATION
+				// ---------------------------------------------
+
+				if (!courseDto.StartDate.HasValue)
+				{
+					return BadRequest(new
+					{
+						Message = "Start Date is required."
+					});
+				}
+
+				if (!courseDto.EndDate.HasValue)
+				{
+					return BadRequest(new
+					{
+						Message = "End Date is required."
+					});
+				}
+
+
+				if (courseDto.EndDate.Value < courseDto.StartDate.Value)
+				{
+					return BadRequest(new
+					{
+						Message = "End Date cannot be before Start Date."
+					});
+				}
+
+
+				// ---------------------------------------------
+				// CREATE COURSE OBJECT
+				// ---------------------------------------------
+
 				var course = new Course
 				{
 					coursename = courseDto.CourseName,
 					description = courseDto.Description,
+
 					stdid = courseDto.StdId,
 					userid = courseDto.UserId,
-					start_date = courseDto.StartDate,
-					end_date = courseDto.EndDate,
+
+					start_date = courseDto.StartDate.Value,
+					end_date = courseDto.EndDate.Value,
+
 					fees = courseDto.Fees,
-					status = courseDto.Status,
+
+					status = string.IsNullOrWhiteSpace(courseDto.Status)
+						? "Active"
+						: courseDto.Status,
+
 					created_by = "Admin",
 					created_at = DateTime.Now,
+
 					modified_by = "Admin",
 					modified_at = DateTime.Now,
+
 					is_active = true
 				};
 
-				var createdCourse = await _courseRepository.AddCourse(course);
+
+				// ---------------------------------------------
+				// SAVE TO DATABASE
+				// ---------------------------------------------
+
+				var createdCourse =
+					await _courseRepository.AddCourse(course);
+
+
+				// ---------------------------------------------
+				// RETURN CREATED COURSE
+				// ---------------------------------------------
 
 				return CreatedAtAction(
 					nameof(GetCourse),
-					new { id = createdCourse.courseid },
+					new
+					{
+						id = createdCourse.courseid
+					},
 					createdCourse
 				);
 			}
@@ -139,46 +189,121 @@ namespace Course_Management.Controllers
 			}
 		}
 
-		/// <summary>
-		/// Updates an existing course.
-		/// </summary>
-		/// <param name="id">Unique identifier of the course.</param>
-		/// <param name="courseDto">Updated course information.</param>
-		/// <returns>No content.</returns>
-		/// <response code="204">Course updated successfully.</response>
-		/// <response code="400">Invalid request data.</response>
-		/// <response code="404">Course not found.</response>
-		/// <response code="500">Internal server error.</response>
+
+		// =====================================================
+		// UPDATE COURSE
+		// =====================================================
+
 		[HttpPut("{id}")]
-		public async Task<IActionResult> PutCourse(int id, CourseRequestDto courseDto)
+		public async Task<IActionResult> PutCourse(
+			int id,
+			[FromBody] CourseRequestDto courseDto)
 		{
 			try
 			{
+				// ---------------------------------------------
+				// VALIDATION
+				// ---------------------------------------------
+
 				if (!ModelState.IsValid)
 				{
 					return BadRequest(ModelState);
 				}
 
-				var existingCourse = await _courseRepository.GetCourseById(id);
+
+				// ---------------------------------------------
+				// DATE VALIDATION
+				// ---------------------------------------------
+
+				if (!courseDto.StartDate.HasValue)
+				{
+					return BadRequest(new
+					{
+						Message = "Start Date is required."
+					});
+				}
+
+				if (!courseDto.EndDate.HasValue)
+				{
+					return BadRequest(new
+					{
+						Message = "End Date is required."
+					});
+				}
+
+
+				if (courseDto.EndDate.Value < courseDto.StartDate.Value)
+				{
+					return BadRequest(new
+					{
+						Message = "End Date cannot be before Start Date."
+					});
+				}
+
+
+				// ---------------------------------------------
+				// FIND EXISTING COURSE
+				// ---------------------------------------------
+
+				var existingCourse =
+					await _courseRepository.GetCourseById(id);
 
 				if (existingCourse == null)
 				{
-					return NotFound("Course not found.");
+					return NotFound(new
+					{
+						Message = "Course not found."
+					});
 				}
 
-				existingCourse.coursename = courseDto.CourseName;
-				existingCourse.description = courseDto.Description;
-				existingCourse.stdid = courseDto.StdId;
-				existingCourse.userid = courseDto.UserId;
-				existingCourse.start_date = courseDto.StartDate;
-				existingCourse.end_date = courseDto.EndDate;
-				existingCourse.fees = courseDto.Fees;
-				existingCourse.status = courseDto.Status;
-				existingCourse.modified_by = "Admin";
-				existingCourse.modified_at = DateTime.Now;
-				existingCourse.is_active = true;
 
-				await _courseRepository.UpdateCourse(existingCourse);
+				// ---------------------------------------------
+				// UPDATE COURSE
+				// ---------------------------------------------
+
+				existingCourse.coursename =
+					courseDto.CourseName;
+
+				existingCourse.description =
+					courseDto.Description;
+
+				existingCourse.stdid =
+					courseDto.StdId;
+
+				existingCourse.userid =
+					courseDto.UserId;
+
+				existingCourse.start_date =
+					courseDto.StartDate.Value;
+
+				existingCourse.end_date =
+					courseDto.EndDate.Value;
+
+				existingCourse.fees =
+					courseDto.Fees;
+
+				existingCourse.status =
+					string.IsNullOrWhiteSpace(courseDto.Status)
+						? "Active"
+						: courseDto.Status;
+
+				existingCourse.modified_by =
+					"Admin";
+
+				existingCourse.modified_at =
+					DateTime.Now;
+
+				existingCourse.is_active = courseDto.IsActive;
+
+
+				// ---------------------------------------------
+				// SAVE UPDATE
+				// ---------------------------------------------
+
+				await _courseRepository.UpdateCourse(
+					existingCourse
+				);
+
 
 				return NoContent();
 			}
@@ -192,27 +317,38 @@ namespace Course_Management.Controllers
 			}
 		}
 
-		/// <summary>
-		/// Deletes a course by its ID.
-		/// </summary>
-		/// <param name="id">Unique identifier of the course.</param>
-		/// <returns>No content.</returns>
-		/// <response code="204">Course deleted successfully.</response>
-		/// <response code="404">Course not found.</response>
-		/// <response code="500">Internal server error.</response>
+
+		// =====================================================
+		// DELETE COURSE
+		// =====================================================
+
 		[HttpDelete("{id}")]
 		public async Task<IActionResult> DeleteCourse(int id)
 		{
 			try
 			{
-				var course = await _courseRepository.GetCourseById(id);
+				// ---------------------------------------------
+				// FIND COURSE
+				// ---------------------------------------------
+
+				var course =
+					await _courseRepository.GetCourseById(id);
 
 				if (course == null)
 				{
-					return NotFound("Course not found.");
+					return NotFound(new
+					{
+						Message = "Course not found."
+					});
 				}
 
+
+				// ---------------------------------------------
+				// DELETE
+				// ---------------------------------------------
+
 				await _courseRepository.DeleteCourse(id);
+
 
 				return NoContent();
 			}

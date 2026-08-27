@@ -81,9 +81,27 @@ namespace Course_Management.Repository
 			using var connection = new SqlConnection(
 				_configuration.GetConnectionString("CollegeDB"));
 
+			var parameters = new
+			{
+				CourseID = course.courseid,
+				coursename = course.coursename,
+				description = course.description,
+				stdid = course.stdid,
+				userid = course.userid,
+				start_date = course.start_date,
+				end_date = course.end_date,
+				fees = course.fees,
+				status = course.status,
+				modified_by = course.modified_by,
+				modified_at = course.modified_at,
+				created_by = course.created_by,
+				created_at = course.created_at,
+				is_active = course.is_active
+			};
+
 			await connection.ExecuteAsync(
 				"UpdateCourse",
-				course,
+				parameters,
 				commandType: CommandType.StoredProcedure);
 		}
 

@@ -22,6 +22,11 @@ namespace Course_Management.Services
 			return await _userRepository.GetUserById(id);
 		}
 
+		public async Task<User?> GetUserByEmail(string email)
+		{
+			return await _userRepository.GetUserByEmail(email);
+		}
+
 		public async Task AddUser(User user)
 		{
 			await _userRepository.AddUser(user);
