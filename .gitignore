@@ -8,3 +8,13 @@ obj/
 # User files
 *.user
 *.suo
+
+# Configuration / secrets
+appsettings.json
+appsettings.Development.json
+appsettings.Local.json
+*.env
+
+# Uploaded files
+Uploads/
+wwwroot/

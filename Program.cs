@@ -69,6 +69,10 @@ builder.Services.AddScoped<IAssignmentRepository, AssignmentRepository>();
 builder.Services.AddScoped<IAssignmentFileRepository, AssignmentFileRepository>();
 builder.Services.AddScoped<IEnrollmentRepository, EnrollmentRepository>();
 builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
+builder.Services.AddScoped<ISubmissionRepository, SubmissionRepository>();
+
+builder.Services.AddHttpClient<AIService>();
+
 
 // ===================================
 // Swagger Configuration

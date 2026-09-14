@@ -1,4 +1,5 @@
-﻿using CourseManagementAPI.DTOs;
+﻿
+using CourseManagementAPI.DTOs;
 
 namespace CourseManagementAPI.Repositories
 {
@@ -6,6 +7,10 @@ namespace CourseManagementAPI.Repositories
 	{
 		Task<IEnumerable<PaymentResponseDto>> GetPaymentsByStudentId(
 			int userId
+		);
+
+		Task<IEnumerable<InstructorPaymentDto>> GetPaymentsByInstructorId(
+			int instructorId
 		);
 	}
 }

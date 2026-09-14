@@ -11,6 +11,9 @@ namespace Course_Management.Models
 
 		public int courseid { get; set; }
 
+		// Course name returned from Courses table
+		public string? coursename { get; set; }
+
 		public string? assignmenttitle { get; set; }
 
 		public string? modifiedby { get; set; }

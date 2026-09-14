@@ -1,4 +1,5 @@
-﻿using Dapper;
+﻿
+using Dapper;
 using Microsoft.Data.SqlClient;
 using CourseManagementAPI.DTOs;
 
@@ -13,10 +14,9 @@ namespace CourseManagementAPI.Repositories
 			_configuration = configuration;
 		}
 
-
-		// =====================================================
-		// GET ENROLLED STUDENTS BY COURSE ID
-		// =====================================================
+		// =========================================================
+		// GET STUDENTS BY COURSE ID
+		// =========================================================
 
 		public async Task<IEnumerable<EnrollmentStudentDto>> GetStudentsByCourseId(
 			int courseId)
@@ -52,9 +52,65 @@ namespace CourseManagementAPI.Repositories
 		}
 
 
-		// =====================================================
+		// =========================================================
+		// GET ALL STUDENTS FOR AN INSTRUCTOR
+		// =========================================================
+
+		public async Task<IEnumerable<EnrollmentStudentDto>> GetStudentsByInstructorId(
+			int instructorId)
+		{
+			using var connection = new SqlConnection(
+				_configuration.GetConnectionString("CollegeDB")
+			);
+
+			const string sql = @"
+                SELECT
+                    u.userid AS UserID,
+                    u.firstname AS FirstName,
+                    u.lastname AS LastName,
+                    u.email AS Email,
+                    u.phoneno AS PhoneNo,
+
+                    MAX(e.EnrollmentDate) AS EnrollmentDate,
+
+                    'Enrolled' AS Status
+
+                FROM Enrollment e
+
+                INNER JOIN Users u
+                    ON e.UserID = u.userid
+
+                INNER JOIN Courses c
+                    ON e.CourseID = c.courseid
+
+                WHERE c.userid = @InstructorID
+                  AND e.IsActive = 1
+
+                GROUP BY
+                    u.userid,
+                    u.firstname,
+                    u.lastname,
+                    u.email,
+                    u.phoneno
+
+                ORDER BY
+                    u.firstname,
+                    u.lastname;
+            ";
+
+			return await connection.QueryAsync<EnrollmentStudentDto>(
+				sql,
+				new
+				{
+					InstructorID = instructorId
+				}
+			);
+		}
+
+
+		// =========================================================
 		// GET ENROLLMENTS BY STUDENT ID
-		// =====================================================
+		// =========================================================
 
 		public async Task<IEnumerable<StudentEnrollmentDto>> GetEnrollmentsByStudentId(
 			int userId)
@@ -66,13 +122,9 @@ namespace CourseManagementAPI.Repositories
 			const string sql = @"
                 SELECT
                     0 AS EnrollmentId,
-
                     c.courseid AS CourseId,
-
                     c.coursename AS CourseName,
-
                     c.description AS Description,
-
                     c.category AS Category,
 
                     ISNULL(
@@ -81,15 +133,11 @@ namespace CourseManagementAPI.Repositories
                     ) AS Instructor,
 
                     c.duration AS Duration,
-
                     c.start_date AS StartDate,
-
                     c.end_date AS EndDate,
-
                     c.fees AS Fees,
 
                     e.EnrollmentDate AS EnrollmentDate,
-
                     e.Status AS Status
 
                 FROM Enrollment e
@@ -101,10 +149,10 @@ namespace CourseManagementAPI.Repositories
                     ON c.userid = u.userid
 
                 WHERE e.UserID = @UserID
-
                   AND e.IsActive = 1
 
-                ORDER BY e.EnrollmentDate DESC;
+                ORDER BY
+                    e.EnrollmentDate DESC;
             ";
 
 			return await connection.QueryAsync<StudentEnrollmentDto>(
@@ -117,9 +165,9 @@ namespace CourseManagementAPI.Repositories
 		}
 
 
-		// =====================================================
+		// =========================================================
 		// ENROLL STUDENT
-		// =====================================================
+		// =========================================================
 
 		public async Task<bool> EnrollStudent(
 			int courseId,
@@ -136,9 +184,9 @@ namespace CourseManagementAPI.Repositories
 
 			try
 			{
-				// =================================================
+				// -------------------------------------------------
 				// CHECK COURSE EXISTS
-				// =================================================
+				// -------------------------------------------------
 
 				const string courseCheckSql = @"
                     SELECT COUNT(1)
@@ -159,14 +207,13 @@ namespace CourseManagementAPI.Repositories
 				if (courseExists == 0)
 				{
 					await transaction.RollbackAsync();
-
 					return false;
 				}
 
 
-				// =================================================
-				// CHECK ALREADY ENROLLED
-				// =================================================
+				// -------------------------------------------------
+				// CHECK IF STUDENT IS ALREADY ENROLLED
+				// -------------------------------------------------
 
 				const string existingEnrollmentSql = @"
                     SELECT COUNT(1)
@@ -190,14 +237,13 @@ namespace CourseManagementAPI.Repositories
 				if (alreadyEnrolled > 0)
 				{
 					await transaction.RollbackAsync();
-
 					return false;
 				}
 
 
-				// =================================================
+				// -------------------------------------------------
 				// INSERT ENROLLMENT
-				// =================================================
+				// -------------------------------------------------
 
 				const string insertEnrollmentSql = @"
                     INSERT INTO Enrollment
@@ -229,9 +275,9 @@ namespace CourseManagementAPI.Repositories
 				);
 
 
-				// =================================================
+				// -------------------------------------------------
 				// COMMIT
-				// =================================================
+				// -------------------------------------------------
 
 				await transaction.CommitAsync();
 
@@ -240,9 +286,9 @@ namespace CourseManagementAPI.Repositories
 			catch
 			{
 				await transaction.RollbackAsync();
-
 				throw;
 			}
 		}
 	}
 }
+

@@ -54,6 +54,41 @@ namespace CourseManagementAPI.Controllers
 
 
 		// =====================================================
+		// GET ALL STUDENTS FOR INSTRUCTOR
+		// =====================================================
+
+		[HttpGet("instructor/{instructorId}")]
+		public async Task<IActionResult> GetStudentsByInstructor(
+			int instructorId)
+		{
+			try
+			{
+				if (instructorId <= 0)
+				{
+					return BadRequest(new
+					{
+						message = "Invalid Instructor ID."
+					});
+				}
+
+				var students =
+					await _enrollmentRepository
+						.GetStudentsByInstructorId(instructorId);
+
+				return Ok(students);
+			}
+			catch (Exception ex)
+			{
+				return StatusCode(500, new
+				{
+					message = "An error occurred while retrieving instructor students.",
+					error = ex.Message
+				});
+			}
+		}
+
+
+		// =====================================================
 		// GET MY ENROLLMENTS BY STUDENT ID
 		// =====================================================
 
